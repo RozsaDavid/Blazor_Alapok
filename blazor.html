@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="codefirst">
+        <h1>CodeFirst without API</h1>
+        <div class="nugets">
+            <h2>NuGets</h2>
+            <p>microsoft.EntityFrameworkCore.Tools 8.0.7</p>
+            <p>microsoft.visualstudio.web.codegeneration.Design (code generation tool) 8.0.7</p>
+            <p>mysql.entityframeworkcore (mysql server database provider for entity framework) 8.0.8</p>
+            <p>microsoft.AspNetCore.Components.QuickGrid.Entity (provides an entity framework) (ha kell Quickgrid)</p>
+        </div>
+        <div class="appset">
+            <h2>appsettings.json</h2>
+            <p>"ConnectionStrings": {"BlazorAppDBContext": "server=localhost;uid=Tesztuser;pwd=Blazor12345;database=ElsoDB"}</p>
+        </div>
+        <div class="Modell">
+            <h2>Modell</h2>
+            <p>Add Folder</p>
+            <p>Add C#</p>
+            <p>using System.ComponentModel.DataAnnotations; (ha kell érvényesítés)</p>
+        </div>
+        <div class="Data">
+            <h2>Data</h2>
+            <p>Add Folder</p>
+            <p>Add C#</p>
+            <p>MySql_DB_Context.cs</p>
+            <p>
+                using DB_kapcsolat.Modell;<br/>
+                using Microsoft.EntityFrameworkCore;<br/>
+                <br/>
+                namespace DB_kapcsolat.Data {<br/>
+                    &emsp;public class MySql_DB_Context :DbContext {<br/>
+                        &emsp;&emsp;public MySql_DB_Context(DbContextOptions&lt;MySql_DB_Context&gt; options) : base(options) { }<br/>
+                        &emsp;&emsp;public DbSet&lt;User&gt; User { get; set; } = default;<br/>
+                    &emsp;}<br/>
+                }<br/>
+            </p>
+        </div>
+        <div class="Imports">
+            <h2>_Imports.razor</h2>
+            <p>@using DB_kapcsolat.Modell</p>
+            <p>@using Microsoft.AspNetCore.Components.Authorization (ha kell authorizáció)</p>
+            <p>@using Microsoft.AspNetCore.Components.QuickGrid (ha kell quickgrid)</p>
+        </div>
+        <div class="Program">
+            <h2>Program.cs</h2>
+            <p>using DB_kapcsolat.Data;</p>
+            <p>using Microsoft.EntityFrameworkCore;</p>
+            <p>using Microsoft.AspNetCore.Authentication.Cookies;</p>
+            <p>
+                //authentikáció<br/>
+                builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {<br/>
+                &emsp;options.Cookie.Name = "auth_token";<br/>
+                &emsp;options.LoginPath = "/Login";<br/>
+                &emsp;options.Cookie.MaxAge = TimeSpan.FromMinutes(10);<br/>
+                &emsp;options.AccessDeniedPath = "/access-denied";<br/>
+                });<br/>
+                <br/>
+                builder.Services.AddAuthorization();<br/>
+                builder.Services.AddCascadingAuthenticationState();<br/>
+                <br/>
+                builder.Services.AddDbContext&lt;MySql_DB_Context&gt;(options =><br/>
+                options.UseMySQL(builder.Configuration.GetConnectionString("BlazorAppDBContext")<br/>
+                &emsp;?? throw new InvalidOperationException("Hiba a betöltésnél")));<br/>
+                <br/>
+                //quickgrid <br/>
+                builder.Services.AddQuickGridEntityFrameworkAdapter();<br/>
+                <br/>
+                var app = builder.Build();<br/>
+                <br/>
+                app.UseAuthentication();<br/>
+                app.UseAuthorization();<br/>
+                <br/>
+                app.UseAntiforgery();<br/>
+            </p>
+        </div>
+
+        <div class="Nuget">
+            <h2>Nuget Console</h2>
+            <p>Add-Migration (Name)</p>
+            <p>Update-Database</p>
+        </div>
+
+        <div class="show">
+            <h2>Show Page</h2>
+            <p>@inject Film_HF.Data.MySql_DB_Context DBName</p>
+            <p>
+                &lt;QuickGrid Items="myDatabase.Hasznalo"&gt;<br/>
+                    &emsp;&lt;PropertyColumn Property="@(p =&gt; p.Id)" Sortable="true" /&gt;<br/>
+                    &emsp;&lt;TemplateColumn Context="product" Title="Szerkesztés"&gt;<br/>
+                    &emsp;&emsp;&lt;a href="@($"edit?Id={product.ProductId}")">Szerkesztés&lt;/a&gt;<br/>
+                    &emsp;&lt;/TemplateColumn&gt;<br/>
+                &lt;/QuickGrid&gt;
+            </p>
+        </div>
+
+        <div class="create">
+            <h2>Create Page</h2>
+            <p>@inject Film_HF.Data.MySql_DB_Context DBName</p>
+            <p>
+                &lt;EditForm OnValidSubmit="AddUser" Model="hasznalo" Enhance&gt;<br/>
+                &emsp;&lt;label&gt;&lt;/label&gt;<br/>
+                &emsp;&lt;InputText @bind-Value=""/&gt;<br/>
+                &emsp;&lt;button type="submit"&gt;Küldés&lt;/button&gt;<br/>
+                &lt;/EditForm&gt;<br/>
+            </p>
+            <p>
+                @code {<br/>
+                    &emsp;[SupplyParameterFromForm]<br/>
+                    &emsp;public Film FilmDB { get; set; } = new();<br/>
+                    <br/>
+                    &emsp;public async Task AddUser() {<br/>
+                    &emsp;&emsp;myDatabase.Hasznalo.Add(hasznalo);<br/>
+                    &emsp;&emsp;await myDatabase.SaveChangesAsync();<br/>
+                    &emsp;&emsp;navigationManager.NavigateTo("/");<br/>
+                    &emsp;}<br/>
+                }
+            </p>
+        </div>
+
+        <div class="update">
+            <h2>Update Page</h2>
+            <p>
+                @using Microsoft.EntityFrameworkCore<br/>
+                @inject Product_DB.Data.MySql_DB_Context DB<br/>
+                @rendermode InteractiveServer
+            </p>
+            <p>
+                @if(ProductDB is null) {<br/>
+                &emsp;&lt;p&gt;Loading...&lt;/p&gt;<br/>
+                } else {<br/>
+                &emsp;&lt;EditForm OnValidSubmit="UpdateUser" Model="hasznalo" FormName="Edit" Enhance&gt;<br/>
+                &emsp;&emsp;&lt;label&gt;&lt;/label&gt;<br/>
+                &emsp;&emsp;&lt;InputText @bind-Value=""/&gt;<br/>
+                &emsp;&emsp;&lt;button type="submit"&gt;Küldés&lt;/button&gt;<br/>
+                &emsp;&lt;/EditForm&gt;<br/>
+                }
+            </p>
+            <p>
+                @code {<br/>
+                    &emsp;[SupplyParameterFromForm]<br/>
+                    &emsp;public Film FilmDB { get; set; } = new();<br/>
+                    <br/>
+                    &emsp;[SupplyParameterFromQuery]<br/>
+                    &emsp;public int Id { get; set; }<br/>
+                    <br/>
+                    &emsp;protected override async Task OnInitializedAsync() {<br/>
+                    &emsp;&emsp;ProductDB = await DB.Product.FirstOrDefaultAsync(m => m.ProductId == Id);<br/>
+                    &emsp;}<br/>
+                    <br/>
+                    &emsp;public async Task UpdateUser() {<br/>
+                    &emsp;&emsp;DB.SaveChangesAsync();<br/>
+                    &emsp;}<br/>
+                }
+            </p>
+        </div>
+    </div>
+
+    <div class="dbfirst">
+        <h1>DB First</h1>
+        <div class="nuget">
+            <h2>Nuget:</h2>
+            <p>Microsoft.Entityframeworkcore.tools</p>
+            <p>Mysql.EntityFrameworkCore</p>
+            <p>Microsoft.Visualstudio.Web.Codegeneration.Design</p>
+	    <p>microsoft.AspNetCore.Components.QuickGrid.Entity (provides an entity framework) (ha kell Quickgrid)</p>
+	</div>
+        <div class="pmconsole">
+            <h2>Package MAnager console</h2>
+            <p>Default project legyen beállítva a fejlécben és a startup project is</p>
+            <p>Scaffold-DbContext "Server=localhost;user=Tesztuser;password=Blazor12345;database=matyaskert" Mysql.EntityFrameworkCore -OutputDir DAL\Model -Schemas matyaskert</p>
+        </div>
+	<div class="appset">
+            <h2>appsettings.json</h2>
+            <p>"ConnectionStrings": {"BlazorAppDBContext": "server=localhost;uid=Tesztuser;pwd=Blazor12345;database=ElsoDB"}</p>
+        </div>
+        <div class="Imports">
+            <h2>_Imports.razor</h2>
+            <p>@using DB_kapcsolat.DAL.Model</p>
+            <p>@using Microsoft.AspNetCore.Components.Authorization (ha kell authorizáció)</p>
+            <p>@using Microsoft.AspNetCore.Components.QuickGrid (ha kell quickgrid)</p>
+        </div>
+        <div class="Program">
+            <h2>Program.cs</h2>
+            <p>using DB_kapcsolat.DAL.Model;</p>
+            <p>using Microsoft.EntityFrameworkCore;</p>
+            <p>using Microsoft.AspNetCore.Authentication.Cookies;</p>
+            <p>
+                //authentikáció<br/>
+                builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => {<br/>
+                &emsp;options.Cookie.Name = "auth_token";<br/>
+                &emsp;options.LoginPath = "/Login";<br/>
+                &emsp;options.Cookie.MaxAge = TimeSpan.FromMinutes(10);<br/>
+                &emsp;options.AccessDeniedPath = "/access-denied";<br/>
+                });<br/>
+                <br/>
+                builder.Services.AddAuthorization();<br/>
+                builder.Services.AddCascadingAuthenticationState();<br/>
+                <br/>
+                builder.Services.AddDbContext&lt;MySql_DB_Context&gt;(options =><br/>
+                &emsp;options.UseMySQL(builder.Configuration.GetConnectionString("BlazorAppDBContext")<br/>
+                &emsp;?? throw new InvalidOperationException("Hiba a betöltésnél")));<br/>
+                <br/>
+                //quickgrid <br/>
+                builder.Services.AddQuickGridEntityFrameworkAdapter();<br/>
+                <br/>
+                var app = builder.Build();<br/>
+                <br/>
+                app.UseAuthentication();<br/>
+                app.UseAuthorization();<br/>
+                <br/>
+                app.UseAntiforgery();<br/>
+            </p>
+        </div>
+    </div>
+
+    <div class="API">
+        <h1>API connection</h1>
+        <div class="api">
+            <h2>API</h2>
+            <p>minden ugyanaz mint a DB first</p>
+            <h3>Controller</h3>
+            <p>Add new Empty Controller</p>
+            <p>
+                using Microsoft.EntityFrameworkCore;<br/>
+                using puskaAPI.DAL.Model;<br/>
+            </p>
+            <p>
+                public class HasznaloController :ControllerBase {<br/>
+                private readonly PuskadbContext _dbContext;<br/>
+                private readonly IConfiguration _config;<br/>
+
+                public HasznaloController(PuskadbContext dbContext, IConfiguration config) {<br/>
+                        &emsp;&emsp;_dbContext = dbContext;<br/>
+                        &emsp;&emsp;_config = config;<br/>
+                        &emsp;}<br/>
+                    <br/>
+                    &emsp;[HttpGet("getUserWithId")]<br/>
+                    &emsp;public async Task&lt;ActionResult&lt;Hasznalo&gt;&gt; GetUserWithId(int userID) {<br/>
+                        &emsp;&emsp;var hasznalo = await _dbContext.Hasznalos.FirstOrDefaultAsync(m => m.Id == userID);<br/>
+                        <br/>
+                        &emsp;&emsp;return Ok(hasznalo);<br/>
+                    &emsp;}<br/>
+                }<br/>
+            </p>
+        </div>
+	<h2>FrontEnd</h2>
+        <div class="program">
+            <h3>Program.cs</h3>
+            <p>
+                builder.Services.AddScoped(sp =><br/>
+                &emsp;new HttpClient {<br/>
+                &emsp;&emsp;BaseAddress = new Uri(builder.Configuration.GetValue&lt;string&gt;("APIURL"))<br/>
+                &emsp;}<br/>
+                );<br/>
+            </p>
+        </div>
+        <div class="appsettings">
+            <h3>appsettings.json</h3>
+            <p>"APIURL": "https://localhost:7269"   (a port eltérhet, swagger kiírja, vagy api project prop/launchsettings)</p>
+        </div>
+        <div class="Page">
+            <h3>Page</h3>
+            <p>@inject HttpClient httpClient</p>
+            <p>
+                HasznaloVM User;<br/>
+                <br/>
+                protected override async Task OnInitializedAsync() {<br/>
+                    &emsp;await base.OnInitializedAsync();<br/>
+                    <br/>
+                    &emsp;User = await httpClient.GetFromJsonAsync&lt;HasznaloVM&gt;($"/api/Hasznalo/getUserWithId/2");<br/>
+                }
+            </p>
+        </div>
+    </div>
+</body>
+</html>
